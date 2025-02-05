@@ -134,12 +134,15 @@ class EmailNotifier(Notifier):
         print("Email sent to", customer_data.contact_info.email)
 
 
+@dataclass
 class SMSNotifier(Notifier):
-    def send_confirmation(self, customer_data: CustomerData, sms_gateway: str):
+    sms_gateway: str
+
+    def send_confirmation(self, customer_data: CustomerData):
         phone_number = customer_data.contact_info.phone
-        sms_gateway = "the custom SMS Gateway"
+
         print(
-            f"send the sms using {sms_gateway}: SMS sent to {phone_number}: Thank you for your payment."
+            f"send the sms using {self.sms_gateway}: SMS sent to {phone_number}: Thank you for your payment."
         )
 
 
@@ -178,7 +181,7 @@ class PaymentService:
 
 
 if __name__ == "__main__":
-    sms_notifier = SMSNotifier()
+    sms_notifier = SMSNotifier(sms_gateway="the custom SMS Gateway")
     payment_service = PaymentService()
     payment_service_sms_notifier = PaymentService(notifier=sms_notifier)
 
@@ -191,10 +194,10 @@ if __name__ == "__main__":
 
     payment_data = PaymentData(amount=500, source="tok_mastercard")
 
+    payment_service.process_transaction(customer_data_with_email, payment_data)
     payment_service_sms_notifier.process_transaction(
-        customer_data_with_email, payment_data
+        customer_data_with_phone, payment_data
     )
-    payment_service.process_transaction(customer_data_with_phone, payment_data)
 
     try:
         payment_data = PaymentData(amount=500, source="tok_radarBlock")
