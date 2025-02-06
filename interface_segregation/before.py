@@ -43,7 +43,7 @@ class PaymentProcessorProtocol(Protocol):
     """
 
     def process_transaction(
-            self, customer_data: CustomerData, payment_data: PaymentData
+        self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse: ...
 
 
@@ -53,7 +53,7 @@ class RefundPaymentProtocol(Protocol):
 
 class RecurringPaymentProtocol(Protocol):
     def setup_recurring_payment(
-            self, customer_data: CustomerData, payment_data: PaymentData
+        self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse: ...
 
 
@@ -61,7 +61,7 @@ class StripePaymentProcessor(
     PaymentProcessorProtocol, RefundPaymentProtocol, RecurringPaymentProtocol
 ):
     def process_transaction(
-            self, customer_data: CustomerData, payment_data: PaymentData
+        self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse:
         stripe.api_key = os.getenv("STRIPE_API_KEY")
         try:
@@ -108,7 +108,7 @@ class StripePaymentProcessor(
             )
 
     def setup_recurring_payment(
-            self, customer_data: CustomerData, payment_data: PaymentData
+        self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse:
         stripe.api_key = os.getenv("STRIPE_API_KEY")
         price_id = os.getenv("STRIPE_PRICE_ID", "")
@@ -163,7 +163,7 @@ class StripePaymentProcessor(
         return customer
 
     def _attach_payment_method(
-            self, customer_id: str, payment_source: str
+        self, customer_id: str, payment_source: str
     ) -> stripe.PaymentMethod:
         """
         Attaches a payment method to a customer.
@@ -177,7 +177,7 @@ class StripePaymentProcessor(
         return payment_method
 
     def _set_default_payment_method(
-            self, customer_id: str, payment_method_id: str
+        self, customer_id: str, payment_method_id: str
     ) -> None:
         """
         Sets the default payment method for a customer.
@@ -193,7 +193,7 @@ class StripePaymentProcessor(
 
 class OfflinePaymentProcessor(PaymentProcessorProtocol):
     def process_transaction(
-            self, customer_data: CustomerData, payment_data: PaymentData
+        self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse:
         print("Processing offline payment for", customer_data.name)
         return PaymentResponse(
@@ -247,10 +247,10 @@ class SMSNotifier:
 
 class TransactionLogger:
     def log_transaction(
-            self,
-            customer_data: CustomerData,
-            payment_data: PaymentData,
-            payment_response: PaymentResponse,
+        self,
+        customer_data: CustomerData,
+        payment_data: PaymentData,
+        payment_response: PaymentResponse,
     ):
         with open("transactions.log", "a") as log_file:
             log_file.write(f"{customer_data.name} paid {payment_data.amount}\n")
@@ -302,7 +302,7 @@ class PaymentService:
     refund_processor: Optional[RefundPaymentProtocol] = None
 
     def process_transaction(
-            self, customer_data: CustomerData, payment_data: PaymentData
+        self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse:
         self.customer_validator.validate(customer_data)
         self.payment_validator.validate(payment_data)
