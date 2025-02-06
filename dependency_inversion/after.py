@@ -1,6 +1,6 @@
 import os
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, Protocol
 
 import stripe
@@ -43,7 +43,7 @@ class PaymentProcessorProtocol(Protocol):
     """
 
     def process_transaction(
-        self, customer_data: CustomerData, payment_data: PaymentData
+            self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse: ...
 
 
@@ -53,7 +53,7 @@ class RefundPaymentProtocol(Protocol):
 
 class RecurringPaymentProtocol(Protocol):
     def setup_recurring_payment(
-        self, customer_data: CustomerData, payment_data: PaymentData
+            self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse: ...
 
 
@@ -61,7 +61,7 @@ class StripePaymentProcessor(
     PaymentProcessorProtocol, RefundPaymentProtocol, RecurringPaymentProtocol
 ):
     def process_transaction(
-        self, customer_data: CustomerData, payment_data: PaymentData
+            self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse:
         stripe.api_key = os.getenv("STRIPE_API_KEY")
         try:
@@ -108,7 +108,7 @@ class StripePaymentProcessor(
             )
 
     def setup_recurring_payment(
-        self, customer_data: CustomerData, payment_data: PaymentData
+            self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse:
         stripe.api_key = os.getenv("STRIPE_API_KEY")
         price_id = os.getenv("STRIPE_PRICE_ID", "")
@@ -163,7 +163,7 @@ class StripePaymentProcessor(
         return customer
 
     def _attach_payment_method(
-        self, customer_id: str, payment_source: str
+            self, customer_id: str, payment_source: str
     ) -> stripe.PaymentMethod:
         """
         Attaches a payment method to a customer.
@@ -177,7 +177,7 @@ class StripePaymentProcessor(
         return payment_method
 
     def _set_default_payment_method(
-        self, customer_id: str, payment_method_id: str
+            self, customer_id: str, payment_method_id: str
     ) -> None:
         """
         Sets the default payment method for a customer.
@@ -193,7 +193,7 @@ class StripePaymentProcessor(
 
 class OfflinePaymentProcessor(PaymentProcessorProtocol):
     def process_transaction(
-        self, customer_data: CustomerData, payment_data: PaymentData
+            self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse:
         print("Processing offline payment for", customer_data.name)
         return PaymentResponse(
@@ -247,10 +247,10 @@ class SMSNotifier:
 
 class TransactionLogger:
     def log_transaction(
-        self,
-        customer_data: CustomerData,
-        payment_data: PaymentData,
-        payment_response: PaymentResponse,
+            self,
+            customer_data: CustomerData,
+            payment_data: PaymentData,
+            payment_response: PaymentResponse,
     ):
         with open("transactions.log", "a") as log_file:
             log_file.write(f"{customer_data.name} paid {payment_data.amount}\n")
@@ -293,16 +293,14 @@ class PaymentDataValidator:
 class PaymentService:
     payment_processor: PaymentProcessorProtocol
     notifier: Notifier
-    customer_validator: CustomerValidator = field(default_factory=CustomerValidator)
-    payment_validator: PaymentDataValidator = field(
-        default_factory=PaymentDataValidator
-    )
-    logger: TransactionLogger = field(default_factory=TransactionLogger)
+    customer_validator: CustomerValidator
+    payment_validator: PaymentDataValidator
+    logger: TransactionLogger
     recurring_processor: Optional[RecurringPaymentProtocol] = None
     refund_processor: Optional[RefundPaymentProtocol] = None
 
     def process_transaction(
-        self, customer_data: CustomerData, payment_data: PaymentData
+            self, customer_data: CustomerData, payment_data: PaymentData
     ) -> PaymentResponse:
         self.customer_validator.validate(customer_data)
         self.payment_validator.validate(payment_data)
@@ -334,6 +332,9 @@ if __name__ == "__main__":
     # Set up the payment processors
     stripe_processor = StripePaymentProcessor()
     offline_processor = OfflinePaymentProcessor()
+    customer_validator = CustomerValidator()
+    payment_validator = PaymentDataValidator()
+    logger = TransactionLogger()
 
     # Set up the customer data and payment data
     customer_data_with_email = CustomerData(
@@ -354,15 +355,25 @@ if __name__ == "__main__":
 
     # # Using Stripe processor with email notifier
     payment_service_email = PaymentService(
-        stripe_processor,
-        email_notifier,
+        payment_processor=stripe_processor,
+        notifier=email_notifier,
+        customer_validator=customer_validator,
+        payment_validator=payment_validator,
+        logger=logger,
         refund_processor=stripe_processor,
         recurring_processor=stripe_processor,
     )
+
     payment_service_email.process_transaction(customer_data_with_email, payment_data)
 
     # Using Stripe processor with SMS notifier
-    payment_service_sms = PaymentService(stripe_processor, sms_notifier)
+    payment_service_sms = PaymentService(
+        payment_processor=stripe_processor,
+        notifier=sms_notifier,
+        customer_validator=customer_validator,
+        payment_validator=payment_validator,
+        logger=logger,
+    )
     sms_payment_response = payment_service_sms.process_transaction(
         customer_data_with_phone, payment_data
     )
@@ -373,7 +384,13 @@ if __name__ == "__main__":
         payment_service_email.process_refund(transaction_id_to_refund)
 
     # Using offline processor with email notifier
-    offline_payment_service = PaymentService(offline_processor, email_notifier)
+    offline_payment_service = PaymentService(
+        payment_processor=offline_processor,
+        notifier=email_notifier,
+        customer_validator=customer_validator,
+        payment_validator=payment_validator,
+        logger=logger,
+    )
     offline_payment_response = offline_payment_service.process_transaction(
         customer_data_with_email, payment_data
     )
