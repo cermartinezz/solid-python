@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from src.commons import ContactInfo
+from src.payment_service.commons import ContactInfo
 
 
 class CustomerData(BaseModel):
