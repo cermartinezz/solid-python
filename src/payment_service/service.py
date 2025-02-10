@@ -1,6 +1,10 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Self
 
+from src.payment_service.commons import CustomerData, PaymentData, PaymentResponse
+from src.payment_service.factories.payment_processor_factory import (
+    PaymentProcessorFactory,
+)
 from src.payment_service.loggers import TransactionLogger
 from src.payment_service.notifiers import NotifierProtocol
 from src.payment_service.processors import (
@@ -9,7 +13,6 @@ from src.payment_service.processors import (
     RefundPaymentProtocol,
 )
 from src.payment_service.validators import CustomerValidator, PaymentDataValidator
-from .commons import CustomerData, PaymentData, PaymentResponse
 
 
 @dataclass
@@ -21,6 +24,19 @@ class PaymentService:
     logger: TransactionLogger
     recurring_processor: Optional[RecurringPaymentProtocol] = None
     refund_processor: Optional[RefundPaymentProtocol] = None
+
+    @classmethod
+    def create_with_payment_processor(
+            self, payment_data: PaymentData, **kwargs
+    ) -> Self:
+        try:
+            payment_processor = PaymentProcessorFactory.create_payment_processor(
+                payment_data
+            )
+            return self(payment_processor=payment_processor, **kwargs)
+        except ValueError as e:
+
+            raise ValueError("Invalid payment data") from e
 
     def process_transaction(
             self, customer_data: CustomerData, payment_data: PaymentData

@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 
 from src.payment_service.commons import CustomerData, ContactInfo, PaymentData
+from src.payment_service.commons.payment_data import PaymentType
 from src.payment_service.loggers import TransactionLogger
 from src.payment_service.notifiers import EmailNotifier, SMSNotifier, NotifierProtocol
 from src.payment_service.processors import (
@@ -139,10 +140,19 @@ if __name__ == "__main__":
     )
 
     # implementation of Strategy pattern
+    print(
+        "-----------------------------------------------------------------------------"
+    )
+    print(
+        "-----------------------------Using Strategy pattern--------------------------"
+    )
+    print(
+        "-----------------------------------------------------------------------------"
+    )
     customer_data = get_customer_data()
     dynamic_notifier = get_notifier_implementation(customer_data)
 
-    payment_service_email = PaymentService(
+    payment_service = PaymentService(
         payment_processor=stripe_processor,
         notifier=dynamic_notifier,
         customer_validator=customer_validator,
@@ -151,3 +161,54 @@ if __name__ == "__main__":
         refund_processor=stripe_processor,
         recurring_processor=stripe_processor,
     )
+    print("Processing transaction with dynamic notifier")
+    payment_service.process_transaction(customer_data, payment_data)
+
+    # implementation of Factory pattern
+    print(
+        "-----------------------------------------------------------------------------"
+    )
+    print(
+        "-----------------------------Using Factory pattern---------------------------"
+    )
+    print(
+        "-----------------------------------------------------------------------------"
+    )
+    print("Processing transaction with factory pattern using Stripe processor")
+    print("payment_service", payment_service)
+    payment_data = PaymentData(amount=100, source="tok_visa", currency="USD")
+    payment_service = PaymentService.create_with_payment_processor(
+        payment_data,
+        notifier=dynamic_notifier,
+        customer_validator=customer_validator,
+        payment_validator=payment_validator,
+        logger=logger,
+    )
+
+    payment_service.process_transaction(customer_data, payment_data)
+
+    payment_data = PaymentData(
+        amount=100, source="tok_visa", currency="USD", type=PaymentType.OFFLINE
+    )
+    payment_service = PaymentService.create_with_payment_processor(
+        payment_data,
+        notifier=dynamic_notifier,
+        customer_validator=customer_validator,
+        payment_validator=payment_validator,
+        logger=logger,
+    )
+    print("Processing transaction with factory pattern using Offline processor")
+    print("payment_service", payment_service)
+    payment_service.process_transaction(customer_data, payment_data)
+
+    payment_data = PaymentData(amount=100, source="tok_visa", currency="CAD")
+    payment_service = PaymentService.create_with_payment_processor(
+        payment_data,
+        notifier=dynamic_notifier,
+        customer_validator=customer_validator,
+        payment_validator=payment_validator,
+        logger=logger,
+    )
+    print("Processing transaction with factory pattern using Local processor")
+    print("payment_service", payment_service)
+    payment_service.process_transaction(customer_data, payment_data)
