@@ -50,3 +50,8 @@ class PaymentService:
         )
         self.logger.log_transaction(customer_data, payment_data, recurring_response)
         return recurring_response
+
+    def set_notifier(self, notifier):
+        print("Setting notifier")
+        self.notifier = notifier
+        return self

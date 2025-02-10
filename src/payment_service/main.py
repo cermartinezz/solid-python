@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 
 from src.payment_service.commons import CustomerData, ContactInfo, PaymentData
 from src.payment_service.loggers import TransactionLogger
-from src.payment_service.notifiers import EmailNotifier, SMSNotifier
+from src.payment_service.notifiers import EmailNotifier, SMSNotifier, NotifierProtocol
 from src.payment_service.processors import (
     StripePaymentProcessor,
     OfflinePaymentProcessor,
@@ -11,6 +11,33 @@ from src.payment_service.service import PaymentService
 from src.payment_service.validators import CustomerValidator, PaymentDataValidator
 
 _ = load_dotenv()
+
+
+def get_email_notifier() -> EmailNotifier:
+    return EmailNotifier()
+
+
+def get_sms_notifier() -> SMSNotifier:
+    sms_gateway = "YourSMSService"
+    return SMSNotifier(sms_gateway)
+
+
+def get_notifier_implementation(customer_data: CustomerData) -> NotifierProtocol:
+    if customer_data.contact_info.phone:
+        return get_sms_notifier()
+    if customer_data.contact_info.email:
+        return get_email_notifier()
+    else:
+        raise ValueError("No valid contact info provided")
+
+
+def get_customer_data() -> CustomerData:
+    customer_data_with_phone = CustomerData(
+        name="Jane Doe", contact_info=ContactInfo(phone="1234567890")
+    )
+
+    return customer_data_with_phone
+
 
 if __name__ == "__main__":
     # Set up the payment processors
@@ -109,4 +136,18 @@ if __name__ == "__main__":
     recurring_payment_data = PaymentData(amount=100, source="pm_card_visa")
     payment_service_email.setup_recurring(
         customer_data_with_email, recurring_payment_data
+    )
+
+    # implementation of Strategy pattern
+    customer_data = get_customer_data()
+    dynamic_notifier = get_notifier_implementation(customer_data)
+
+    payment_service_email = PaymentService(
+        payment_processor=stripe_processor,
+        notifier=dynamic_notifier,
+        customer_validator=customer_validator,
+        payment_validator=payment_validator,
+        logger=logger,
+        refund_processor=stripe_processor,
+        recurring_processor=stripe_processor,
     )
