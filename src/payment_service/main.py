@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 
+from src.payment_service.builders.builders import PaymentServiceBuilder
 from src.payment_service.commons import CustomerData, ContactInfo, PaymentData
 from src.payment_service.commons.payment_data import PaymentType
 from src.payment_service.loggers import TransactionLogger
@@ -211,4 +212,26 @@ if __name__ == "__main__":
     )
     print("Processing transaction with factory pattern using Local processor")
     print("payment_service", payment_service)
+    payment_service.process_transaction(customer_data, payment_data)
+
+    # Builder Pattern
+    print(
+        "-----------------------------------------------------------------------------"
+    )
+    print("-----------------------------Using Build pattern---------------------------")
+    print(
+        "-----------------------------------------------------------------------------"
+    )
+
+    service = (
+        PaymentServiceBuilder()
+        .set_logger()
+        .set_payment_validator()
+        .set_customer_validator()
+        .set_payment_processor(payment_data)
+        .set_notifier(customer_data)
+        .build()
+    )
+
+    print("Processing transaction with build pattern")
     payment_service.process_transaction(customer_data, payment_data)
